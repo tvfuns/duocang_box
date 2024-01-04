@@ -1,10 +1,8 @@
 package com.github.tvbox.osc.bbox.api;
 
 import android.content.Context;
-import android.util.Log;
 import android.widget.Toast;
-
-import com.github.tvbox.osc.bbox.ui.dialog.StoreApiDialog;
+import com.github.tvbox.osc.bbox.constant.URL;
 import com.github.tvbox.osc.bbox.util.HawkConfig;
 import com.github.tvbox.osc.bbox.util.LOG;
 import com.google.gson.Gson;
@@ -12,14 +10,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.lzy.okgo.OkGo;
-import com.lzy.okgo.callback.AbsCallback;
+import com.lzy.okgo.callback.StringCallback;
 import com.lzy.okgo.model.Response;
 import com.orhanobut.hawk.Hawk;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import static com.github.tvbox.osc.bbox.ui.activity.LivePlayActivity.context;
 
 public class StoreApiConfig {
     private static StoreApiConfig instance;
@@ -35,8 +31,12 @@ public class StoreApiConfig {
         return instance;
     }
 
-    public void MyRequest(String url, StoreApiConfigCallback callback) {
-        OkGo.<String>get(url).headers("User-Agent", "okhttp/3.15").headers("Accept", "text/html," + "application/xhtml+xml,application/xml;q=0.9,image/avif," + "image/webp,image/apng," + "*/*;q=0.8,application/signed-exchange;v=b3;" + "q=0.9").execute(new AbsCallback<String>() {
+    public void doGet(String url, StoreApiConfigCallback callback) {
+        LOG.i("request url : " + url);
+        OkGo.<String>get(url)
+                .headers("User-Agent", "okhttp/3.15")
+                .headers("Accept", "text/html," + "application/xhtml+xml,application/xml;q=0.9,image/avif," + "image/webp,image/apng," + "*/*;q=0.8,application/signed-exchange;v=b3;" + "q=0.9")
+                .execute(new StringCallback() {
             @Override
             public void onError(Response<String> response) {
                 callback.error("请求失败，没有获取到数据！！");
@@ -45,12 +45,6 @@ public class StoreApiConfig {
             @Override
             public void onSuccess(Response<String> response) {
                 callback.success(response.body());
-            }
-
-            @Override
-            public String convertResponse(okhttp3.Response response) throws Throwable {
-                assert response.body() != null;
-                return response.body().string();
             }
         });
     }
@@ -67,7 +61,7 @@ public class StoreApiConfig {
         if (storeMap.isEmpty()) {
             Toast.makeText(context, "仓库为空，使用默认仓库", Toast.LENGTH_SHORT).show();
             String name = "自备份仓库";
-            String sotreApi = Hawk.get(HawkConfig.DEFAULT_STORE_API, "https://raw.staticdn.net/mlabalabala/TVResource/main/boxCfg/ori_source.json");
+            String sotreApi = Hawk.get(HawkConfig.DEFAULT_STORE_API, Hawk.get(HawkConfig.PROXY_URL, "https://raw.bunnylblbblbl.eu.org/") + URL.DEFAULT_STORE_API_URL);
             storeMap.put(name, sotreApi);
             storeNameHistory.add(name);
             Hawk.put(HawkConfig.STORE_API_NAME_HISTORY, storeNameHistory);
@@ -81,7 +75,7 @@ public class StoreApiConfig {
         LOG.i("订阅仓库地址：" + storeUrl);
 
         // 处理多仓获取多节点
-        StoreApiConfig.get().MyRequest(storeUrl, new StoreApiConfigCallback() {
+        StoreApiConfig.get().doGet(storeUrl, new StoreApiConfigCallback() {
             @Override
             public void success(String sourceJson) {
                 JsonObject json = new Gson().fromJson(sourceJson, JsonObject.class);
@@ -117,7 +111,7 @@ public class StoreApiConfig {
                             Hawk.put(HawkConfig.STORE_API_NAME, name);
 
                             // 配置默认配置线路
-                            StoreApiConfig.get().MyRequest(url, new StoreApiConfigCallback() {
+                            StoreApiConfig.get().doGet(url, new StoreApiConfigCallback() {
                                 @Override
                                 public void success(String urlsJson) {
                                     String result = MutiUrl(urlsJson);

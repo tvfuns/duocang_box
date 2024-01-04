@@ -136,7 +136,7 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
         tvHotList2 = findViewById(R.id.tvHotList2);
 
         // 主页按钮循环，"历史"按左可以直接跳到"设置"
-        tvHistory.setNextFocusLeftId(tvSetting.getId());
+        // tvHistory.setNextFocusLeftId(tvSetting.getId());
 
         homeHotVodAdapter = new HomeHotVodAdapter();
         homeHotVodAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
@@ -282,7 +282,8 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
                 Movie.Video vod = new Movie.Video();
                 vod.name = obj.get("title").getAsString();
                 vod.note = obj.get("rate").getAsString();
-                vod.pic = obj.get("cover").getAsString();
+                if(!vod.note.isEmpty())vod.note+=" 分";
+                vod.pic = obj.get("cover").getAsString()+"@User-Agent=com.douban.frodo";
                 result.add(vod);
             }
         } catch (Throwable th) {
